@@ -2,18 +2,10 @@ const request = require('request-promise');
 const seedrandom = require('seedrandom');
 const RSS = require('rss');
 
-const express = require('express');
-
-const app = express();
-
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 
-app.get('/', function (req, res) {
-  res.redirect(`/en_US.atom`);
-});
-
-app.get('/:locale.atom', function (req, res) {
-  request(`http://ebird.org/ws1.1/ref/taxa/ebird?fmt=json&locale=${req.locale}`, {
+module.exports = (req, res) => {
+  request(`http://ebird.org/ws1.1/ref/taxa/ebird?fmt=json&locale=${req.query.locale}`, {
     json: true
   }).then((birds) => {
     const today = Math.floor(new Date().getTime() / MS_IN_DAY) * MS_IN_DAY;
@@ -32,18 +24,14 @@ app.get('/:locale.atom', function (req, res) {
       });
     }));
   }).then((birds) => {
-    res.set('Content-Type', 'text/xml');
+    res.setHeader('Content-Type', 'text/xml');
     res.send(formatRSS(birds));
   })
   .catch(e => {
     console.log(e);
     res.sendStatus(500);
   });
-});
-
-app.listen(3000, function () {
-  console.log('Random Bird listening on port 3000!');
-});
+};
 
 function formatRSS(birds) {
   var feed = new RSS({
